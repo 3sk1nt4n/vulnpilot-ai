@@ -520,5 +520,5 @@ Proprietary. Copyright 2025 Solvent CyberSecurity LLC. All rights reserved.
 ## Contact
 
 - **Company:** [Solvent CyberSecurity](https://solventcyber.com)
-- **Author:** Testi Eskintan
+- **Author:** Adil Eskintan
 - **Email:** info@solventcyber.com
