@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+*.whl
+
+# Environment
+.env
+.env.local
+.env.production
+.env.enterprise
+.env.staging
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data (downloaded at runtime, not committed)
+data/epss_scores.csv
+data/known_exploited_vulns.json
+data/otx_pulses.json
+data/sample_scans/*.nessus
+data/prowler_output/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Test
+.pytest_cache/
+htmlcov/
+.coverage
+.tox/
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# Temporary
+*.tmp
+*.bak
+*.swp
+
+# Prowler output (generated at runtime)
+prowler_output/
+
+# Node (if any tooling added later)
+node_modules/
+package-lock.json

@@ -1,0 +1,122 @@
+# ============================================================
+# VulnPilot AI - Local Development Stack
+# Usage: docker compose up -d
+# Cost: $0 | Everything runs locally
+# ============================================================
+name: vulnpilot-ai
+
+services:
+  # --- Core API (FastAPI) ---
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./frontend:/app/frontend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn vulnpilot.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # --- PostgreSQL 16 ---
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: vulnpilot
+      POSTGRES_USER: vulnpilot
+      POSTGRES_PASSWORD: dev
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vulnpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Redis 7 (Cache + Job Queue) ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Celery Worker (Background Jobs) ---
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A vulnpilot.tasks worker -l info -c 2
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - ./config:/app/config
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Ollama: Using LOCAL installation (not Docker) ---
+  # Your local Ollama with qwen2.5:3b is accessed via host.docker.internal:11434
+  # No need for a separate Docker Ollama container
+
+  # --- Celery Beat (Scheduler - Drift Detector, SLA Checks) ---
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A vulnpilot.tasks beat -l info
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - ./config:/app/config
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Prowler: Cloud Compliance Scanner (500+ checks, 39 frameworks) ---
+  # Runs on-demand via VulnPilot API. Not always-on.
+  # Usage: docker compose run prowler aws --compliance cis_2.0_aws
+  prowler:
+    image: toniblyx/prowler:latest
+    env_file: .env
+    volumes:
+      - prowler_output:/home/prowler/output
+      - ./data/prowler_sample:/home/prowler/sample:ro
+    # AWS credentials: pass via env vars or mount ~/.aws
+    # AZURE: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
+    # GCP: mount service account key + set GOOGLE_APPLICATION_CREDENTIALS
+    environment:
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+    profiles:
+      - cloud  # Only starts with: docker compose --profile cloud run prowler
+    entrypoint: ["sleep", "infinity"]  # Keep alive for exec commands
+    restart: "no"
+
+volumes:
+  pg_data:
+  redis_data:
+  prowler_output:

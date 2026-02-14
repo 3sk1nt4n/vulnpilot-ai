@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnPilot AI - Agentic Vulnerability Management | Solvent CyberSecurity</title>
+<meta name="description" content="VulnPilot AI: Zero Noise, Zero Delay, Zero Missed Patches. 5 AI agents score, debate, and ticket every CVE. 100% local. Open source.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f8f9fc;--bg3:#f1f3f8;
+  --panel:#ffffff;--border:#e2e5ec;
+  --text:#0f172a;--text2:#475569;--muted:#94a3b8;
+  --orange:#ea580c;--amber:#d97706;--cyan:#0d9488;
+  --crit:#dc2626;--high:#ea580c;--med:#ca8a04;--low:#16a34a;
+  --blue:#2563eb;--purple:#7c3aed;
+  --navy:#1e293b;
+  --glow:rgba(234,88,12,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+::selection{background:rgba(234,88,12,0.15);color:var(--orange)}
+
+/* ══ HERO ══ */
+.hero{position:relative;padding:80px 40px 60px;text-align:center;overflow:hidden;background:linear-gradient(180deg,#fff 0%,#fef7f0 50%,#fff 100%)}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(234,88,12,0.06) 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;top:60px;right:10%;width:300px;height:300px;background:radial-gradient(circle,rgba(13,148,136,0.04) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;background:#fff;border:1px solid #fed7aa;border-radius:24px;font-size:11px;font-weight:700;color:var(--orange);margin-bottom:28px;letter-spacing:0.8px;text-transform:uppercase;animation:fadeUp .6s ease;box-shadow:0 2px 12px rgba(234,88,12,0.06)}
+.hero h1{font-size:clamp(40px,5.5vw,64px);font-weight:900;line-height:1.05;margin-bottom:20px;animation:fadeUp .6s ease .1s both;color:var(--navy);letter-spacing:-1px}
+.hero h1 span{background:linear-gradient(135deg,var(--orange),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:clamp(16px,1.8vw,19px);color:var(--text2);max-width:640px;margin:0 auto 36px;line-height:1.7;animation:fadeUp .6s ease .2s both}
+.hero-metrics{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;animation:fadeUp .6s ease .25s both;margin-bottom:40px}
+.hero-metric{text-align:center;padding:16px 24px;background:#fff;border:1px solid var(--border);border-radius:14px;min-width:120px;transition:all .3s;box-shadow:0 1px 4px rgba(0,0,0,0.04);cursor:pointer}
+.hero-metric:hover{border-color:#fdba74;transform:translateY(-4px);box-shadow:0 8px 24px rgba(234,88,12,0.08)}
+.hero-metric .num{font-family:'JetBrains Mono';font-size:36px;font-weight:800;color:var(--orange);line-height:1}
+.hero-metric .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:6px;font-weight:600}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fadeUp .6s ease .35s both}
+.btn-primary{padding:16px 32px;background:linear-gradient(135deg,#ea580c,#d97706);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s;font-family:'DM Sans';box-shadow:0 4px 16px rgba(234,88,12,0.2)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(234,88,12,0.3)}
+.btn-ghost{padding:16px 32px;background:transparent;border:1.5px solid var(--border);color:var(--text);border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s;font-family:'DM Sans'}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange);background:rgba(234,88,12,0.03)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ SECTION COMMON ══ */
+.section{max-width:1200px;margin:0 auto;padding:80px 24px}
+.section-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(234,88,12,0.06);border:1px solid rgba(234,88,12,0.12);border-radius:20px;font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:900;color:var(--navy);line-height:1.15;margin-bottom:12px;letter-spacing:-0.5px}
+.section-desc{font-size:15px;color:var(--text2);max-width:560px;line-height:1.7}
+.section-center{text-align:center}.section-center .section-desc{margin:0 auto}
+
+/* ══ LIVE DEMO ══ */
+.demo-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:80px 0}
+.demo-frame{max-width:1200px;margin:0 auto;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+.demo-chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.demo-dot{width:10px;height:10px;border-radius:50%}.d-r{background:#ef4444}.d-y{background:#eab308}.d-g{background:#22c55e}
+.demo-url{flex:1;margin-left:12px;padding:5px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'JetBrains Mono';color:var(--muted)}
+.dash{padding:20px}
+.dash-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.dash-logo{width:36px;height:36px;background:linear-gradient(135deg,#fed7aa,#fdba74);border:1px solid #f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.dash-name{font-family:'JetBrains Mono';font-size:15px;font-weight:700;color:var(--navy)}
+.dash-tagline{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.dash-providers{margin-left:auto;display:flex;gap:6px}
+.prov{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.prov-on{background:rgba(22,163,74,0.08);color:var(--low);border:1px solid rgba(22,163,74,0.15)}
+.prov-off{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
+
+/* KPI Cards */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;background:linear-gradient(135deg,#fef3e2,#fde8cd);border:1px solid #fdba74;border-radius:12px;padding:12px}
+.kpi{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s}
+.kpi:hover{border-color:#f97316;transform:translateY(-1px)}
+.kpi .kl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px;font-weight:600}
+.kpi .kv{font-family:'JetBrains Mono';font-size:28px;font-weight:800;line-height:1.1}
+.kpi .ks{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 12px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:2px solid var(--border);font-weight:700}
+.tbl td{padding:10px 12px;border-bottom:1px solid #f1f3f8}
+.tbl tr:hover{background:#fefbf7}
+.cve-link{color:var(--cyan);font-family:'JetBrains Mono';font-weight:600;font-size:12px;cursor:pointer;text-decoration:none}
+.cve-link:hover{color:var(--orange);text-decoration:underline}
+.sev{padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.s-CRITICAL{background:#fef2f2;color:var(--crit)}.s-HIGH{background:#fff7ed;color:var(--high)}.s-MEDIUM{background:#fefce8;color:var(--med)}.s-LOW{background:#f0fdf4;color:var(--low)}
+.kev{background:#fef2f2;color:var(--crit);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}
+.flip{color:var(--amber);font-size:9px;font-weight:700;margin-left:4px}
+.dw{color:var(--purple);font-size:10px}
+.filters{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.fbtn{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text2);font-family:'DM Sans';transition:all .2s}
+.fbtn:hover{border-color:#fdba74;color:var(--orange)}
+.fbtn.act{background:#fef2f2;border-color:rgba(220,38,38,0.3);color:var(--crit)}
+
+/* AI Bar */
+.ai-bar{margin-top:16px;padding:14px 16px;background:linear-gradient(135deg,#fef7f0,#fef3e2);border:1px solid #fdba74;border-radius:12px}
+.ai-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;font-weight:600;color:#9a3412}
+.ai-row{display:flex;gap:8px}
+.ai-in{flex:1;padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none}
+.ai-in:focus{border-color:var(--orange)}
+.ai-go{padding:10px 22px;background:linear-gradient(135deg,#ea580c,#d97706);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans'}
+.ai-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ai-chip{background:rgba(255,255,255,0.8);border:1px solid rgba(234,88,12,0.25);border-radius:10px;padding:4px 10px;font-size:10px;color:#9a3412;cursor:pointer;white-space:nowrap;font-weight:600;transition:all .2s}
+.ai-chip:hover{background:#fff;border-color:var(--orange)}
+.ai-resp{margin-top:12px;padding:16px;background:#fff;border-radius:10px;border:1px solid var(--border);display:none;font-size:13px;line-height:1.7;color:var(--text2)}
+.ai-resp.on{display:block;animation:fadeUp .3s ease}
+.ai-resp strong{color:var(--navy)}
+.ai-src{margin-top:10px;padding:8px 10px;background:var(--bg2);border-radius:6px;font-size:10px;font-family:'JetBrains Mono';color:var(--muted);display:flex;align-items:center;gap:6px}
+
+/* ══ HOW IT WORKS ══ */
+.flow-step{display:flex;align-items:center;gap:16px;padding:14px 20px;background:#fff;border:1px solid var(--border);border-radius:12px;transition:all .3s}
+.flow-step:hover{border-color:#fdba74;box-shadow:0 4px 16px rgba(234,88,12,0.06)}
+.flow-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:14px;font-weight:800;flex-shrink:0}
+.flow-title{font-size:14px;font-weight:700;color:var(--navy)}
+.flow-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.flow-arrow{text-align:center;color:var(--border);font-size:20px;padding:4px 0}
+
+/* ══ AGENTIC VS TRADITIONAL ══ */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.compare-card{padding:24px;border-radius:14px;border:1px solid var(--border)}
+.compare-card.old{background:#fafafa}
+.compare-card.new{background:#fef7f0;border-color:#fdba74}
+.compare-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.compare-card.old .compare-label{color:var(--muted)}
+.compare-card.new .compare-label{color:var(--orange)}
+
+/* ══ FEATURES ══ */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.feat{padding:24px;background:#fff;border:1px solid var(--border);border-radius:14px;transition:all .3s}
+.feat:hover{border-color:#fdba74;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+.feat-icon{font-size:28px;margin-bottom:12px}
+.feat-name{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.feat-desc{font-size:13px;color:var(--text2);line-height:1.7}
+.feat-tag{display:inline-block;margin-top:10px;padding:4px 10px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.ft-moat{background:rgba(234,88,12,0.08);color:var(--orange)}
+.ft-oss{background:rgba(37,99,235,0.08);color:var(--blue)}
+.ft-sec{background:rgba(220,38,38,0.08);color:var(--crit)}
+
+/* ══ INTEGRATIONS ══ */
+.int-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:1000px;margin:0 auto}
+.int-pill{padding:7px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;font-weight:500;transition:all .2s}
+.int-pill:hover{border-color:#fdba74;background:#fef7f0}
+.int-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.int-on{background:var(--low);box-shadow:0 0 6px rgba(22,163,74,0.4)}
+
+/* ══ CTA ══ */
+.cta-wrap{background:linear-gradient(135deg,#fef7f0,#fef3e2);border-top:1px solid #fdba74;border-bottom:1px solid #fdba74}
+.cta{max-width:700px;margin:0 auto;text-align:center;padding:80px 24px}
+.cta h2{font-size:32px;font-weight:900;color:var(--navy);margin-bottom:12px;letter-spacing:-0.5px}
+.cta p{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px}
+
+/* ══ FOOTER ══ */
+footer{text-align:center;padding:32px 24px;border-top:1px solid var(--border);background:var(--bg2)}
+footer a{color:var(--orange);text-decoration:none;font-weight:600}
+footer a:hover{text-decoration:underline}
+
+/* ══ CVE MODAL ══ */
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;max-width:520px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:fadeUp .25s ease}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-close{width:28px;height:28px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s}
+.modal-close:hover{background:#fef2f2;border-color:rgba(220,38,38,0.3);color:var(--crit)}
+.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f3f8;font-size:13px}
+.modal-label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.modal-val{font-family:'JetBrains Mono';font-weight:600}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:900px){.kpi-row{grid-template-columns:1fr 1fr}.compare{grid-template-columns:1fr}}
+@media(max-width:600px){.hero{padding:48px 20px 40px}.kpi-row{grid-template-columns:1fr}.feat-grid{grid-template-columns:1fr}.hero-metrics{gap:12px}}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-badge">🛡️ Solvent CyberSecurity &middot; Agentic Vulnerability Management</div>
+  <h1>Zero Noise. Zero Delay.<br><span>Zero Missed Patches.</span></h1>
+  <p>5 AI agents score, debate, and prioritize every CVE so you patch what matters and ignore what doesn't. 100% free. 100% local. Your data never leaves.</p>
+  <div class="hero-metrics">
+    <div class="hero-metric" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})"><div class="num" id="hs-agents">5</div><div class="lbl">AI Agents</div></div>
+    <div class="hero-metric" onclick="document.getElementById('ints').scrollIntoView({behavior:'smooth'})"><div class="num" id="hs-int">31</div><div class="lbl">Integrations</div></div>
+    <div class="hero-metric" onclick="filterDemo('noise');document.getElementById('demo').scrollIntoView({behavior:'smooth'})"><div class="num" id="hs-noise">85%</div><div class="lbl">Noise Eliminated</div></div>
+    <div class="hero-metric" onclick="document.getElementById('feats').scrollIntoView({behavior:'smooth'})"><div class="num" id="hs-cost">$0</div><div class="lbl">To Start</div></div>
+  </div>
+  <div class="hero-cta">
+    <a href="https://solventcybersecurity.com/vulnpilotai" class="btn-primary">Get VulnPilot AI</a>
+    <a href="#demo" class="btn-ghost">See Live Demo</a>
+  </div>
+</section>
+
+<!-- ══ LIVE DEMO ══ -->
+<div class="demo-wrap" id="demo">
+  <div style="text-align:center;max-width:1200px;margin:0 auto 32px;padding:0 24px">
+    <div class="section-tag">Interactive Demo</div>
+    <div class="section-title" style="font-size:28px">Try the Dashboard</div>
+    <div class="section-desc" style="max-width:600px;margin:8px auto 0">Click CVEs, filter by severity, ask the AI. This is exactly what you get after <code style="background:#fef3e2;padding:3px 8px;border-radius:6px;font-family:'JetBrains Mono';color:var(--orange);font-size:12px;border:1px solid #fdba74">docker compose up</code></div>
+  </div>
+  <div class="demo-frame" style="max-width:1200px;margin:0 auto">
+    <div class="demo-chrome">
+      <div class="demo-dot d-r"></div><div class="demo-dot d-y"></div><div class="demo-dot d-g"></div>
+      <div class="demo-url">localhost:8001 - VulnPilot AI v1.0 Command Center</div>
+    </div>
+    <div class="dash">
+      <div class="dash-head">
+        <div class="dash-logo">🛡️</div>
+        <div><div class="dash-name">VulnPilot <span style="color:var(--orange)">AI</span></div><div class="dash-tagline">Zero Noise &middot; Zero Delay &middot; 31 Integrations</div></div>
+        <div class="dash-providers">
+          <div class="prov prov-on">🦙 Ollama</div>
+          <div class="prov prov-on">🟠 Claude</div>
+          <div class="prov prov-on">🟢 GPT-4o</div>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi" onclick="filterDemo('tickets')"><div class="kl">Tickets Created</div><div class="kv" style="color:var(--orange)">45%</div><div class="ks">21 auto-assigned with SLA</div></div>
+        <div class="kpi" onclick="filterDemo('flips')"><div class="kl">CVSS&rarr;VPRS Flips</div><div class="kv" style="color:var(--cyan)">40%</div><div class="ks">19 of 47 re-prioritized</div></div>
+        <div class="kpi" onclick="filterDemo('critical')"><div class="kl">Critical</div><div class="kv" style="color:var(--crit)">26%</div><div class="ks">12 requires immediate action</div></div>
+        <div class="kpi" onclick="filterDemo('noise')"><div class="kl">Noise Eliminated</div><div class="kv" style="color:var(--low)">85%</div><div class="ks">35 eliminated</div></div>
+      </div>
+      <div class="filters">
+        <span style="font-size:14px;font-weight:700">Vulnerability Results</span>
+        <button class="fbtn act" onclick="filterDemo('critical')" id="fb-critical">Critical Only</button>
+        <button class="fbtn" onclick="filterDemo('critical+high')" id="fb-critical+high">Critical + High</button>
+        <button class="fbtn" onclick="filterDemo('all')" id="fb-all">Show All</button>
+        <button class="fbtn" onclick="filterDemo('noise')" id="fb-noise">Noise</button>
+        <button class="fbtn" onclick="filterDemo('flips')" id="fb-flips">CVSS Flips</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--muted);font-family:'JetBrains Mono'" id="resultCount">12 of 47</span>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>CVE</th><th>CVSS</th><th>VPRS</th><th>Severity</th><th>KEV</th><th>Hard Rule</th><th>Status</th></tr></thead>
+        <tbody id="demoTable"></tbody>
+      </table>
+      <div class="ai-bar">
+        <div class="ai-head">⚡ VulnPilot AI - Ask anything about your vulnerability data</div>
+        <div class="ai-row">
+          <input class="ai-in" id="aiInput" placeholder="Which CVEs should I patch first this week?" readonly onfocus="runDemoAI()">
+          <button class="ai-go" onclick="runDemoAI()">⚡ Ask AI</button>
+        </div>
+        <div class="ai-chips">
+          <div class="ai-chip" onclick="demoChip(this)">🔥 Patch first</div>
+          <div class="ai-chip" onclick="demoChip(this)">📋 Briefing</div>
+          <div class="ai-chip" onclick="demoChip(this)">🛡 KEV</div>
+          <div class="ai-chip" onclick="demoChip(this)">🕵️ Dark web</div>
+          <div class="ai-chip" onclick="demoChip(this)">🔄 Flips</div>
+          <div class="ai-chip" onclick="demoChip(this)">🔇 Noise</div>
+          <div class="ai-chip" onclick="demoChip(this)">💀 Ransomware</div>
+          <div class="ai-chip" onclick="demoChip(this)">🎯 Top risks</div>
+        </div>
+        <div class="ai-resp" id="aiResp"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="section section-center" id="how">
+  <div class="section-tag">Pipeline</div>
+  <div class="section-title">How It Works</div>
+  <div class="section-desc" style="margin-bottom:40px">100% local. 100% free. Your data never leaves your machine.</div>
+  <div style="max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:0">
+    <div class="flow-step"><div class="flow-num" style="background:#e0f2fe;color:var(--blue)">1</div><div><div class="flow-title">Scanner Ingest</div><div class="flow-desc">OpenVAS, Nessus, Tenable, Qualys, Rapid7, Wazuh, CSV</div></div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="flow-num" style="background:#fef3e2;color:var(--orange)">2</div><div><div class="flow-title">Agent 1: Enrich from 7 Threat Intel Feeds</div><div class="flow-desc">EPSS + CISA KEV + NVD + abuse.ch + OTX + GreyNoise + Shodan</div></div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="flow-num" style="background:#fef3e2;color:var(--orange)">3</div><div><div class="flow-title">Agent 2: VPRS Scoring (Replaces CVSS)</div><div class="flow-desc">6 weighted factors: threat intel, KEV, dark web, asset, reachability, controls</div></div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="flow-num" style="background:#fef2f2;color:var(--crit)">4</div><div><div class="flow-title">Agent 3: Cross-Model AI Debate (Lock 2)</div><div class="flow-desc">Justifier builds the case. Challenger attacks it. Verdict when both agree.</div></div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="flow-num" style="background:#f0fdf4;color:var(--low)">5</div><div><div class="flow-title">Agent 4: Auto-Ticket + SLA Assignment</div><div class="flow-desc">ServiceNow, Jira, Slack, Teams, Email, PagerDuty</div></div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="flow-num" style="background:#f0fdf4;color:var(--low)">6</div><div><div class="flow-title">Agent 5: Drift Watch + Continuous Monitoring</div><div class="flow-desc">Rechecks scores on a timer. Alerts on changes. 85% noise auto-eliminated.</div></div></div>
+  </div>
+</section>
+
+<!-- ══ AGENTIC VS TRADITIONAL ══ -->
+<section class="section section-center" id="agentic" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);max-width:none;padding:80px 24px">
+  <div style="max-width:900px;margin:0 auto">
+    <div class="section-tag">Agentic AI</div>
+    <div class="section-title">Traditional AI vs Agentic AI</div>
+    <div class="section-desc" style="margin:0 auto 36px">The difference between a chatbot and an autonomous security analyst</div>
+    <div class="compare">
+      <div class="compare-card old">
+        <div class="compare-label">Traditional AI (Chatbot)</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+          You ask: "Is CVE-2024-3400 critical?"<br>
+          AI answers: "Yes, CVSS 10.0"<br><br>
+          <strong style="color:var(--muted)">You still have to:</strong> check KEV, lookup EPSS, find dark web intel, assess exposure, create a ticket, set SLA...<br><br>
+          <span style="color:var(--crit);font-weight:600">AI answered a question. You did the work.</span>
+        </div>
+      </div>
+      <div class="compare-card new">
+        <div class="compare-label">VulnPilot Agentic AI</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+          5 agents <strong style="color:var(--navy)">autonomously</strong>:<br>
+          🔍 <strong style="color:var(--cyan)">Agent 1:</strong> Enriches from 7 threat intel feeds<br>
+          📊 <strong style="color:var(--cyan)">Agent 2:</strong> Scores VPRS (replaces CVSS)<br>
+          ⚔️ <strong style="color:var(--cyan)">Agent 3:</strong> Two AIs debate every score<br>
+          🎫 <strong style="color:var(--cyan)">Agent 4:</strong> Tickets with SLA, assigns to owner<br>
+          🔔 <strong style="color:var(--cyan)">Agent 5:</strong> Alerts + rechecks on a timer<br><br>
+          <span style="color:var(--low);font-weight:600">You wake up to a prioritized, debated, ticketed queue.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES ══ -->
+<section class="section" id="feats">
+  <div style="text-align:center;margin-bottom:40px">
+    <div class="section-tag">Capabilities</div>
+    <div class="section-title">Why VulnPilot AI</div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-icon">⚔️</div><div class="feat-name">Cross-Model AI Debate</div><div class="feat-desc">Two different AI models argue every CVE score before you see it. Claude builds the case. GPT attacks it. When both agree, confidence is exponential.</div><span class="feat-tag ft-moat">Competitive Moat</span></div>
+    <div class="feat"><div class="feat-icon">🔇</div><div class="feat-name">85% Noise Elimination</div><div class="feat-desc">VPRS replaces CVSS with weighted risk scoring: EPSS, CISA KEV, dark web intel, asset criticality, reachability, and compensating controls.</div><span class="feat-tag ft-moat">Core Value</span></div>
+    <div class="feat"><div class="feat-icon">🦙</div><div class="feat-name">$0 to Start with Ollama</div><div class="feat-desc">Runs 100% locally with Ollama + qwen2.5:7b. Your vulnerability data never leaves your network. Upgrade to Claude or GPT-4o anytime.</div><span class="feat-tag ft-oss">Open Source</span></div>
+    <div class="feat"><div class="feat-icon">🔒</div><div class="feat-name">Triple-Lock Safety</div><div class="feat-desc">Lock 1: Hard rules (KEV = always CRITICAL). Lock 2: Adversarial AI debate. Lock 3: Drift detector rechecks on a timer. AI cannot override policy.</div><span class="feat-tag ft-sec">Safety</span></div>
+    <div class="feat"><div class="feat-icon">🛡️</div><div class="feat-name">4-Layer Guardrails</div><div class="feat-desc">Input scanning blocks jailbreaks. Output scanning catches leaks. Multi-turn escalation detection. RAG poisoning defense.</div><span class="feat-tag ft-sec">Security</span></div>
+    <div class="feat"><div class="feat-icon">☁️</div><div class="feat-name">Cloud Compliance</div><div class="feat-desc">Prowler integration scans AWS, Azure, GCP against CIS, SOC2, HIPAA, PCI DSS frameworks. OCSF-normalized findings alongside vulnerability data.</div><span class="feat-tag ft-oss">New in v1.0</span></div>
+  </div>
+</section>
+
+<!-- ══ INTEGRATIONS ══ -->
+<section class="section section-center" id="ints" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);max-width:none;padding:60px 24px">
+  <div class="section-tag">Ecosystem</div>
+  <div class="section-title" style="font-size:28px;margin-bottom:24px">31 Integrations</div>
+  <div class="int-grid" id="intRow"></div>
+</section>
+
+<!-- ══ CTA ══ -->
+<div class="cta-wrap">
+  <div class="cta">
+    <h2>Deploy in 3 Minutes</h2>
+    <p>One <code style="background:#fff;padding:3px 8px;border-radius:6px;font-family:'JetBrains Mono';color:var(--orange);font-size:13px;border:1px solid #fdba74">docker compose up</code> command. 47 demo CVEs pre-loaded. Score your first vulnerability before coffee gets cold.</p>
+    <div class="hero-cta">
+      <a href="https://solventcybersecurity.com/vulnpilotai" class="btn-primary">Get VulnPilot AI</a>
+      <a href="https://solventcybersecurity.com" class="btn-ghost">Solvent CyberSecurity</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CVE MODAL ══ -->
+<div class="modal-bg" id="cveModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div><div style="font-family:'JetBrains Mono';font-size:18px;font-weight:800;color:var(--cyan)" id="modalCveId">CVE-2024-XXXX</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="modalHardRule">-</div></div>
+      <button class="modal-close" onclick="closeModal()">x</button>
+    </div>
+    <div id="modalBody"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <a id="modalNvdLink" href="#" target="_blank" style="flex:1;text-align:center;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--cyan);text-decoration:none">View on NVD</a>
+      <button onclick="askAboutCve()" style="flex:1;padding:10px;background:#fef3e2;border:1px solid #fdba74;border-radius:8px;font-size:11px;font-weight:600;color:var(--orange);cursor:pointer;font-family:'DM Sans'">Ask AI About This</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div style="margin-bottom:8px"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">AI Cyber Architect</span></div>
+  <a href="https://www.credly.com/users/eskintan/badges" style="font-size:14px;font-weight:800">🏅 3sk1nt4n</a>
+  <span style="margin:0 12px;color:var(--border)">|</span>
+  <span style="font-family:'JetBrains Mono';font-size:10px;color:var(--cyan)">VulnPilot AI v1.0</span>
+  <span style="margin:0 12px;color:var(--border)">|</span>
+  <a href="https://solventcybersecurity.com">Solvent CyberSecurity</a>
+</footer>
+
+<script>
+// ══ DEMO DATA ══
+var D=[
+  {id:'CVE-2024-21887',cvss:9.1,vprs:100,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-3400',cvss:10.0,vprs:100,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-47575',cvss:9.8,vprs:100,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-1709',cvss:10.0,vprs:100,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-FLIP-03',cvss:4.3,vprs:100,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:true,noise:false},
+  {id:'CVE-2023-46805',cvss:8.2,vprs:97,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-20353',cvss:8.6,vprs:97,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2025-0DAY-02',cvss:7.8,vprs:92,sev:'CRITICAL',kev:false,dw:10,hr:'ransomware_critical',flip:false,noise:false},
+  {id:'CVE-2025-0DAY-01',cvss:8.5,vprs:91,sev:'CRITICAL',kev:false,dw:14,hr:'exploit_for_sale_critical',flip:false,noise:false},
+  {id:'CVE-2024-4577',cvss:9.8,vprs:90,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-27198',cvss:9.8,vprs:90,sev:'CRITICAL',kev:true,dw:0,hr:'kev_always_critical',flip:false,noise:false},
+  {id:'CVE-2024-FLIP-01',cvss:6.1,vprs:88,sev:'CRITICAL',kev:false,dw:8,hr:'high_epss_internet_facing',flip:true,noise:false},
+  {id:'CVE-2024-38189',cvss:8.8,vprs:72,sev:'HIGH',kev:false,dw:3,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-21762',cvss:9.8,vprs:78,sev:'HIGH',kev:true,dw:5,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-23113',cvss:9.8,vprs:75,sev:'HIGH',kev:false,dw:4,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-9474',cvss:7.2,vprs:52,sev:'MEDIUM',kev:false,dw:0,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-0012',cvss:9.8,vprs:48,sev:'MEDIUM',kev:false,dw:1,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-5921',cvss:6.9,vprs:45,sev:'MEDIUM',kev:false,dw:0,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-9463',cvss:7.5,vprs:42,sev:'MEDIUM',kev:false,dw:0,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-38178',cvss:7.5,vprs:38,sev:'MEDIUM',kev:false,dw:0,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-38213',cvss:6.5,vprs:35,sev:'MEDIUM',kev:false,dw:0,hr:'',flip:false,noise:false},
+  {id:'CVE-2024-FLIP-05',cvss:3.8,vprs:65,sev:'HIGH',kev:false,dw:6,hr:'dark_web_escalation',flip:true,noise:false},
+  {id:'CVE-2024-FLIP-07',cvss:4.0,vprs:58,sev:'MEDIUM',kev:false,dw:3,hr:'epss_high_reachable',flip:true,noise:false},
+  {id:'CVE-2024-LOW-01',cvss:3.1,vprs:8,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-02',cvss:2.8,vprs:6,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-03',cvss:4.3,vprs:12,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-04',cvss:3.5,vprs:9,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-05',cvss:2.1,vprs:5,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-06',cvss:4.0,vprs:11,sev:'LOW',kev:false,dw:0,hr:'compensating_control',flip:false,noise:true},
+  {id:'CVE-2024-LOW-07',cvss:3.3,vprs:7,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-08',cvss:5.0,vprs:14,sev:'MEDIUM',kev:false,dw:0,hr:'compensating_control',flip:false,noise:true},
+  {id:'CVE-2024-LOW-09',cvss:2.5,vprs:4,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-10',cvss:3.8,vprs:10,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-11',cvss:4.5,vprs:13,sev:'MEDIUM',kev:false,dw:0,hr:'not_internet_facing',flip:false,noise:true},
+  {id:'CVE-2024-LOW-12',cvss:2.0,vprs:3,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-13',cvss:3.0,vprs:6,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-14',cvss:4.8,vprs:15,sev:'MEDIUM',kev:false,dw:0,hr:'compensating_control',flip:false,noise:true},
+  {id:'CVE-2024-LOW-15',cvss:2.3,vprs:5,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-16',cvss:3.6,vprs:8,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-17',cvss:4.2,vprs:11,sev:'LOW',kev:false,dw:0,hr:'not_internet_facing',flip:false,noise:true},
+  {id:'CVE-2024-LOW-18',cvss:2.7,vprs:4,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-19',cvss:3.9,vprs:9,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-20',cvss:5.3,vprs:16,sev:'MEDIUM',kev:false,dw:0,hr:'compensating_control',flip:false,noise:true},
+  {id:'CVE-2024-LOW-21',cvss:2.4,vprs:5,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-22',cvss:3.2,vprs:7,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+  {id:'CVE-2024-LOW-23',cvss:4.1,vprs:10,sev:'LOW',kev:false,dw:0,hr:'not_internet_facing',flip:false,noise:true},
+  {id:'CVE-2024-LOW-24',cvss:2.6,vprs:6,sev:'LOW',kev:false,dw:0,hr:'',flip:false,noise:true},
+];
+
+var _filter='critical';
+function renderTable(f){
+  _filter=f;
+  var r;
+  if(f==='all')r=D;
+  else if(f==='critical')r=D.filter(function(c){return c.sev==='CRITICAL'&&!c.noise});
+  else if(f==='critical+high')r=D.filter(function(c){return(c.sev==='CRITICAL'||c.sev==='HIGH')&&!c.noise});
+  else if(f==='noise')r=D.filter(function(c){return c.noise});
+  else if(f==='flips')r=D.filter(function(c){return c.flip});
+  else if(f==='tickets')r=D.filter(function(c){return!c.noise});
+  else r=D;
+  var t=document.getElementById('demoTable');
+  t.innerHTML=r.map(function(c){
+    var sc={CRITICAL:'crit',HIGH:'high',MEDIUM:'med',LOW:'low'}[c.sev]||'muted';
+    var k=c.kev?'<span class="kev">KEV</span>':(c.dw>0?'<span class="dw">DW:'+c.dw+'</span>':'');
+    var fl=c.flip?'<span class="flip">FLIP</span>':'';
+    var st=c.noise?'<span style="font-size:10px;color:var(--low)">🔇 filtered</span>':'🎫 ticket';
+    var hr=c.hr||(c.noise?'noise_eliminated':'-');
+    return '<tr style="'+(c.noise?'opacity:0.45':'')+'">'
+      +'<td><span class="cve-link" onclick="openModal(\''+c.id+'\')">'+c.id+'</span>'+fl+'</td>'
+      +'<td style="color:var(--text2)">'+c.cvss+'</td>'
+      +'<td><span style="font-family:JetBrains Mono;font-weight:800;color:var(--'+sc+')">'+c.vprs.toFixed(1)+'</span></td>'
+      +'<td><span class="sev s-'+c.sev+'">'+c.sev+'</span></td>'
+      +'<td>'+k+'</td>'
+      +'<td style="font-size:11px;color:var(--muted)">'+hr+'</td>'
+      +'<td style="font-size:11px">'+st+'</td></tr>';
+  }).join('');
+  document.getElementById('resultCount').textContent=r.length+' of '+D.length;
+  document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('act')});
+  var a=document.getElementById('fb-'+f);if(a)a.classList.add('act');
+}
+function filterDemo(f){
+  renderTable(f);
+  var m={tickets:'tickets',critical:'patch',noise:'noise',flips:'flips',all:'brief','critical+high':'patch'};
+  var k=m[f];
+  if(k){var q={tickets:'Which tickets?',patch:'Patch first?',noise:'What noise?',flips:'Show flips',brief:'Briefing'};document.getElementById('aiInput').value=q[k]||'';runDemoAI(q[k]||'');}
+  document.getElementById('demoTable').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+renderTable('critical');
+
+// Integrations
+var ints=[
+  'OpenVAS / Greenbone','Wazuh SIEM','Nessus File Import','Tenable.io','Qualys VMDR','Rapid7 InsightVM',
+  'FIRST EPSS','CISA KEV','NVD / NIST 2.0','abuse.ch ThreatFox','AlienVault OTX','GreyNoise','Shodan CVEDB',
+  'Slack Webhooks','Microsoft Teams','Email (SMTP)','PagerDuty','Generic Webhook',
+  'Console Tickets','ServiceNow','Jira Cloud',
+  'Ollama (Local AI)','Anthropic Claude','OpenAI GPT-4o',
+  'CSV CMDB','ServiceNow CMDB',
+  'Prowler (AWS)','Prowler (Azure)','Prowler (GCP)','Cloud Custodian','AWS Asset Inventory'
+];
+document.getElementById('intRow').innerHTML=ints.map(function(n){return '<div class="int-pill"><div class="int-dot int-on"></div>'+n+'</div>'}).join('');
+
+// Hero count-up
+function countUp(id,target,suffix){var el=document.getElementById(id);if(!el)return;var c=0,s=Math.max(1,Math.floor(target/20));var t=setInterval(function(){c=Math.min(c+s,target);el.textContent=(suffix==='$'?'$':'')+c+(suffix==='%'?'%':'');if(c>=target)clearInterval(t)},40);}
+setTimeout(function(){countUp('hs-agents',5,'');countUp('hs-int',31,'');countUp('hs-noise',85,'%');},500);
+
+// AI Responses
+var AI={
+  'patch':'<strong>Top 5 CVEs to Patch This Week</strong><br><br>1. <span style="color:var(--cyan)">CVE-2024-3400</span> - Palo Alto PAN-OS (CVSS 10.0, VPRS 100) - CISA KEV, actively exploited<br>2. <span style="color:var(--cyan)">CVE-2024-1709</span> - ConnectWise ScreenConnect (CVSS 10.0, VPRS 100) - Auth bypass<br>3. <span style="color:var(--cyan)">CVE-2024-21887</span> - Ivanti Connect Secure (CVSS 9.1, VPRS 100) - Chained exploit<br>4. <span style="color:var(--cyan)">CVE-2025-0DAY-01</span> - VPRS 91 - Exploit for sale on dark web (14 mentions)<br>5. <span style="color:var(--cyan)">CVE-2024-47575</span> - FortiManager (CVSS 9.8, VPRS 100) - Mass exploitation<br><br><em style="color:var(--muted)">All 5 have auto-generated tickets with SLA deadlines.</em>',
+  'kev':'<strong>9 CISA KEV Matches Found</strong><br><br>All 9 are confirmed actively exploited and scored VPRS 90-100 via hard rule <code style="background:var(--bg2);padding:1px 4px;border-radius:3px;font-size:11px">kev_always_critical</code>.<br><br>CVE-2024-3400, CVE-2024-1709, CVE-2024-21887, CVE-2024-47575, CVE-2024-FLIP-03, CVE-2023-46805, CVE-2024-20353, CVE-2024-4577, CVE-2024-27198<br><br><strong style="color:var(--crit)">Patch ALL within 48 hours</strong> per CISA BOD 22-01.',
+  'dark':'<strong>Dark Web Intelligence</strong><br><br>&#8226; <span style="color:var(--cyan)">CVE-2025-0DAY-01</span> - <strong style="color:var(--purple)">14 mentions</strong> - Exploit for sale ($15K-$25K)<br>&#8226; <span style="color:var(--cyan)">CVE-2025-0DAY-02</span> - <strong style="color:var(--purple)">10 mentions</strong> - Ransomware toolchain<br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-01</span> - <strong style="color:var(--purple)">8 mentions</strong> - CVSS 6.1 upgraded to VPRS 88<br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-05</span> - <strong style="color:var(--purple)">6 mentions</strong> - CVSS 3.8 to VPRS 65<br><br><em style="color:var(--muted)">Sourced from abuse.ch, OTX, Shodan Exploits.</em>',
+  'brief':'<strong>60-Second Security Briefing</strong><br><br>47 CVEs scored: <strong style="color:var(--crit)">12 critical</strong>, 3 high, <strong style="color:var(--low)">35 noise eliminated</strong><br><br>🛡 9 CISA KEV - patch immediately<br>🕵️ 5 dark web activity (exploit-for-sale + ransomware)<br>🎫 21 tickets auto-created with SLA<br>🔄 4 CVEs re-prioritized vs CVSS (FLIP)<br><br><strong>Bottom line:</strong> Focus on 15 critical + high. The rest is handled.',
+  'noise':'<strong>26 CVEs Eliminated as Noise</strong><br><br>VulnPilot filtered 26 low-risk CVEs using VPRS:<br><br>&#8226; 17 had CVSS under 5.0 with no KEV, no dark web, low EPSS<br>&#8226; 5 had compensating controls (WAF, segmentation)<br>&#8226; 3 on non-internet-facing dev/test assets<br>&#8226; 1 downgraded: CVSS 5.3 to VPRS 16 (internal only)<br><br><strong style="color:var(--low)">Time saved: ~8 hours of analyst triage.</strong>',
+  'ransom':'<strong>Ransomware-Associated CVEs</strong><br><br><span style="color:var(--cyan)">CVE-2025-0DAY-02</span> (VPRS 92) - <strong style="color:var(--crit)">Active ransomware toolchain</strong>. Deploying via compromised VPN appliances. 10 dark web mentions.<br><br>Hard rule <code style="background:var(--bg2);padding:1px 4px;border-radius:3px;font-size:11px">ransomware_critical</code> auto-elevated to CRITICAL with Tier 1 SLA (4-hour deadline).',
+  'flips':'<strong>4 CVSS vs VPRS Flips</strong><br><br>These CVEs had low CVSS but VulnPilot upgraded them based on real-world risk:<br><br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-03</span> CVSS 4.3 to VPRS 100 - In CISA KEV (confirmed exploited)<br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-01</span> CVSS 6.1 to VPRS 88 - 8 dark web mentions + internet-facing<br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-05</span> CVSS 3.8 to VPRS 65 - Dark web escalation<br>&#8226; <span style="color:var(--cyan)">CVE-2024-FLIP-07</span> CVSS 4.0 to VPRS 58 - High EPSS + reachable<br><br><strong>Without VulnPilot, all 4 would have been deprioritized.</strong>',
+  'tickets':'<strong>21 Tickets Auto-Created</strong><br><br>VulnPilot created tickets for all non-noise CVEs with SLA deadlines:<br><br>&#8226; 12 Critical: 24-hour SLA (Tier 1)<br>&#8226; 3 High: 72-hour SLA (Tier 2)<br>&#8226; 6 Medium: 14-day SLA (Tier 3)<br><br>Each ticket includes: VPRS score, AI explanation, remediation steps, asset owner assignment.',
+  'top':'<strong>Top 5 Risks Right Now</strong><br><br>1. <span style="color:var(--cyan)">CVE-2024-3400</span> VPRS 100 - Palo Alto RCE, CISA KEV<br>2. <span style="color:var(--cyan)">CVE-2024-1709</span> VPRS 100 - ConnectWise auth bypass<br>3. <span style="color:var(--cyan)">CVE-2025-0DAY-02</span> VPRS 92 - Ransomware integration<br>4. <span style="color:var(--cyan)">CVE-2025-0DAY-01</span> VPRS 91 - Exploit for sale<br>5. <span style="color:var(--cyan)">CVE-2024-4577</span> VPRS 90 - PHP CGI injection',
+};
+function runDemoAI(query){
+  var q=(query||document.getElementById('aiInput').value||'').toLowerCase();
+  var key='brief';
+  if(q.match(/patch|first/))key='patch';
+  else if(q.match(/kev|cisa/))key='kev';
+  else if(q.match(/dark|web/))key='dark';
+  else if(q.match(/noise|filter|elim/))key='noise';
+  else if(q.match(/ransom|malware/))key='ransom';
+  else if(q.match(/flip|cvss/))key='flips';
+  else if(q.match(/ticket|auto/))key='tickets';
+  else if(q.match(/top|risk|biggest/))key='top';
+  else if(q.match(/brief|60|second|summary/))key='brief';
+  var html=AI[key]||AI['brief'];
+  var src='<div class="ai-src">🦙 Ollama qwen2.5:7b &middot; 1.2s &middot; Enriched from 7 threat intel feeds</div>';
+  var resp=document.getElementById('aiResp');
+  resp.classList.add('on');
+  resp.innerHTML='<div style="color:var(--muted)">Thinking...</div>';
+  setTimeout(function(){var i=0;function type(){if(i<html.length){if(html[i]==='<'){var c=html.indexOf('>',i);resp.innerHTML=html.substring(0,c+1);i=c+1}else{resp.innerHTML=html.substring(0,i+1);i++}setTimeout(type,8)}else{resp.innerHTML=html+src}}type()},300);
+}
+function demoChip(el){
+  var t=el.textContent.trim();
+  document.getElementById('aiInput').value=t;
+  var m={'Patch first':'patch','Briefing':'brief','KEV':'kev','Dark web':'dark','Flips':'flips','Noise':'noise','Ransomware':'ransom','Top risks':'top'};
+  var q=t.replace(/^[^\s]+\s/,'');
+  runDemoAI(Object.keys(m).find(function(k){return t.includes(k)})?m[Object.keys(m).find(function(k){return t.includes(k)})]:'brief');
+}
+
+// CVE Modal
+var CVE_INFO={
+  'CVE-2024-21887':{desc:'Ivanti Connect Secure command injection. Chained with CVE-2023-46805 for unauthenticated RCE.',product:'Ivanti Connect Secure',epss:0.97},
+  'CVE-2024-3400':{desc:'Palo Alto PAN-OS GlobalProtect command injection. Unauthenticated RCE via crafted requests.',product:'Palo Alto PAN-OS',epss:0.96},
+  'CVE-2024-47575':{desc:'FortiManager fgfmd daemon critical vulnerability. Missing authentication for remote code execution.',product:'Fortinet FortiManager',epss:0.95},
+  'CVE-2024-1709':{desc:'ConnectWise ScreenConnect authentication bypass. Trivial exploitation for full system takeover.',product:'ConnectWise ScreenConnect',epss:0.94},
+  'CVE-2024-FLIP-03':{desc:'CVSS 4.3 but in CISA KEV. VulnPilot hard rule elevated to CRITICAL.',product:'Multiple vendors',epss:0.88},
+  'CVE-2024-FLIP-01':{desc:'CVSS 6.1 but VPRS 88. Dark web intelligence + internet-facing asset.',product:'Web Application',epss:0.78},
+};
+var _sel=null;
+function openModal(id){
+  _sel=id;var c=D.find(function(x){return x.id===id});if(!c)return;
+  var d=CVE_INFO[id]||{desc:'Details available in full deployment.',product:'-',epss:0};
+  document.getElementById('modalCveId').textContent=id;
+  document.getElementById('modalHardRule').textContent=c.hr||'No hard rule';
+  var sc={CRITICAL:'crit',HIGH:'high',MEDIUM:'med',LOW:'low'}[c.sev]||'muted';
+  var h='<div style="padding:12px;background:var(--bg2);border-radius:8px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.6">'+d.desc+'</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+  h+='<div style="padding:10px;background:var(--bg2);border-radius:8px;text-align:center"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CVSS</div><div style="font-size:22px;font-weight:800;font-family:JetBrains Mono;color:var(--text2)">'+c.cvss+'</div></div>';
+  h+='<div style="padding:10px;background:var(--bg2);border-radius:8px;text-align:center"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">VPRS</div><div style="font-size:22px;font-weight:800;font-family:JetBrains Mono;color:var(--'+sc+')">'+c.vprs.toFixed(1)+'</div></div></div>';
+  h+='<div class="modal-row"><span class="modal-label">Severity</span><span class="sev s-'+c.sev+'" style="font-size:11px">'+c.sev+'</span></div>';
+  h+='<div class="modal-row"><span class="modal-label">Product</span><span class="modal-val" style="color:var(--navy);font-size:12px">'+d.product+'</span></div>';
+  h+='<div class="modal-row"><span class="modal-label">CISA KEV</span><span class="modal-val" style="color:'+(c.kev?'var(--crit)':'var(--muted)')+'">'+(c.kev?'Actively Exploited':'-')+'</span></div>';
+  h+='<div class="modal-row"><span class="modal-label">EPSS</span><span class="modal-val" style="color:var(--orange)">'+(d.epss*100).toFixed(0)+'%</span></div>';
+  h+='<div class="modal-row"><span class="modal-label">Dark Web</span><span class="modal-val" style="color:'+(c.dw>0?'var(--purple)':'var(--muted)')+'">'+(c.dw>0?c.dw+' mentions':'None')+'</span></div>';
+  if(c.flip)h+='<div class="modal-row"><span class="modal-label">CVSS vs VPRS</span><span class="modal-val" style="color:var(--amber)">FLIP - Low CVSS, High VPRS</span></div>';
+  document.getElementById('modalBody').innerHTML=h;
+  var l=document.getElementById('modalNvdLink');
+  if(id.includes('FLIP')||id.includes('0DAY')){l.href='#';l.textContent='Not yet public';l.style.opacity='0.5'}
+  else{l.href='https://nvd.nist.gov/vuln/detail/'+id;l.textContent='View on NVD';l.style.opacity='1'}
+  document.getElementById('cveModal').classList.add('on');
+}
+function closeModal(){document.getElementById('cveModal').classList.remove('on')}
+function askAboutCve(){closeModal();if(_sel){document.getElementById('aiInput').value='Tell me about '+_sel;var c=D.find(function(x){return x.id===_sel});if(c&&c.kev)runDemoAI('kev');else if(c&&c.dw>0)runDemoAI('dark');else if(c&&c.flip)runDemoAI('flip');else runDemoAI('brief');document.getElementById('aiResp').scrollIntoView({behavior:'smooth',block:'center'})}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+hostname,ip_address,asset_tier,business_unit,environment,asset_type,owner,owner_email,escalation_contact,escalation_email,is_internet_facing,network_zone,has_waf,has_ips,is_segmented,has_edr,os,cmdb_id
+vpn-gateway-01,10.1.1.1,tier_1,Infrastructure,production,network_device,Network Team,netops@company.com,CISO,ciso@company.com,true,dmz,true,true,false,false,PAN-OS 11.1,CMDB-001
+auth-server-01,10.1.2.10,tier_1,Identity,production,server,Identity Team,identity@company.com,VP Engineering,vpe@company.com,false,internal,false,true,true,true,Ubuntu 22.04,CMDB-002
+payment-api-01,10.1.3.20,tier_1,Payments,production,server,Payments Team,payments@company.com,CFO,cfo@company.com,true,dmz,true,true,true,true,Ubuntu 22.04,CMDB-003
+customer-db-01,10.1.4.30,tier_1,Data,production,database,DBA Team,dba@company.com,VP Engineering,vpe@company.com,false,segmented,false,true,true,true,PostgreSQL 16,CMDB-004
+web-frontend-01,10.1.5.40,tier_2,Engineering,production,server,Web Team,webteam@company.com,Engineering Lead,eng-lead@company.com,true,dmz,true,true,false,true,Nginx 1.24,CMDB-005
+jenkins-ci-01,10.1.6.50,tier_2,Engineering,production,server,DevOps Team,devops@company.com,Engineering Lead,eng-lead@company.com,false,internal,false,false,false,true,Ubuntu 22.04,CMDB-006
+internal-wiki-01,10.1.7.60,tier_2,IT,production,server,IT Team,it@company.com,IT Manager,it-mgr@company.com,false,internal,false,false,false,true,Confluence,CMDB-007
+monitoring-01,10.1.8.70,tier_2,Operations,production,server,SRE Team,sre@company.com,VP Engineering,vpe@company.com,false,internal,false,true,false,true,Grafana/Prometheus,CMDB-008
+dev-workstation-01,10.2.1.100,tier_3,Engineering,development,workstation,jane.developer,jane@company.com,Engineering Lead,eng-lead@company.com,false,internal,false,false,false,true,macOS 14,CMDB-009
+dev-workstation-02,10.2.1.101,tier_3,Engineering,development,workstation,john.developer,john@company.com,Engineering Lead,eng-lead@company.com,false,internal,false,false,false,true,Windows 11,CMDB-010
+printer-floor3,10.2.2.200,tier_3,Facilities,production,network_device,Facilities,facilities@company.com,IT Manager,it-mgr@company.com,false,internal,false,false,true,false,HP LaserJet,CMDB-011
+staging-app-01,10.3.1.10,tier_3,Engineering,staging,server,QA Team,qa@company.com,Engineering Lead,eng-lead@company.com,false,internal,false,false,false,true,Ubuntu 22.04,CMDB-012
+mail-server-01,10.1.9.80,tier_2,IT,production,server,IT Team,it@company.com,CISO,ciso@company.com,true,dmz,true,true,false,true,Exchange 2019,CMDB-013
+fileserver-01,10.1.10.90,tier_2,IT,production,server,IT Team,it@company.com,IT Manager,it-mgr@company.com,false,internal,false,false,true,true,Windows Server 2022,CMDB-014
+screenconnect-01,10.1.11.100,tier_1,IT,production,server,IT Team,it@company.com,CISO,ciso@company.com,true,dmz,true,false,false,true,Windows Server 2022,CMDB-015

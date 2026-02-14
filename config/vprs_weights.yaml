@@ -1,0 +1,79 @@
+# ============================================================
+# VulnPilot AI - VPRS Scoring Weights
+# YAML-configurable per customer. This is differentiator #2.
+# Only Nucleus v3.0 offers anything similar, and barely.
+# ============================================================
+#
+# Weights MUST sum to 1.0 (100%).
+# Customers can tune these to match their risk appetite.
+
+weights:
+  epss: 0.25                # Exploit Prediction Scoring System (FIRST.org)
+  kev: 0.20                 # CISA Known Exploited Vulnerabilities
+  dark_web: 0.15            # Dark web mentions, exploit availability
+  asset_criticality: 0.20   # Asset tier (crown jewels vs workstations)
+  reachability: 0.12        # Internet-facing, attack path viability
+  controls: 0.08            # Compensating controls (WAF, IPS, segmentation)
+
+# --- Severity Thresholds ---
+thresholds:
+  critical: 85    # VPRS >= 85 = CRITICAL
+  high: 65        # VPRS >= 65 = HIGH
+  medium: 40      # VPRS >= 40 = MEDIUM
+  low: 15         # VPRS >= 15 = LOW
+  # Below 15 = INFO
+
+# --- Factor Scoring Rules ---
+factor_scoring:
+
+  epss:
+    # EPSS is 0-1 probability. Scale to 0-100 for component scoring.
+    method: "scaled"
+    # Nonlinear scaling: small EPSS differences at top end matter more
+    # EPSS 0.9 vs 0.95 is a bigger deal than 0.01 vs 0.06
+    thresholds:
+      - { min: 0.7, score: 100 }   # Top 1% - active mass exploitation
+      - { min: 0.4, score: 85 }    # Very high - targeted exploitation likely
+      - { min: 0.1, score: 65 }    # Elevated - above noise floor
+      - { min: 0.04, score: 40 }   # Moderate - worth watching
+      - { min: 0.01, score: 20 }   # Low - minimal exploitation evidence
+      - { min: 0.0, score: 5 }     # Negligible
+
+  kev:
+    # Binary: in KEV = 100, not in KEV = 0
+    in_kev: 100
+    not_in_kev: 0
+    # Ransomware association bonus
+    ransomware_bonus: 10
+
+  dark_web:
+    exploit_for_sale: 100
+    exploit_available: 80
+    ransomware_associated: 90
+    active_scanning: 70
+    mentions_high: 60       # 5+ dark web mentions
+    mentions_low: 30        # 1-4 dark web mentions
+    none: 0
+
+  asset_criticality:
+    tier_1: 100             # Crown jewels (payment, auth, PII)
+    tier_2: 60              # Important (internal apps, dev infra)
+    tier_3: 25              # Standard (workstations, printers)
+
+  reachability:
+    internet_facing: 100
+    dmz: 75
+    internal_reachable: 40
+    segmented: 15
+    air_gapped: 5
+
+  controls:
+    # Higher control score = MORE protected = LOWER risk
+    # This factor is SUBTRACTED from risk (inverted)
+    no_controls: 100        # Fully exposed
+    waf_only: 70
+    ips_only: 70
+    segmented_only: 60
+    waf_and_ips: 40
+    waf_ips_segmented: 15
+    fully_mitigated: 5

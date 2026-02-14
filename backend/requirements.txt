@@ -1,0 +1,66 @@
+# ============================================================
+# VulnPilot AI - Python Dependencies (v55 - Updated Feb 2026)
+# ============================================================
+
+# --- Core Framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# --- Database ---
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+alembic==1.14.1
+
+# --- Redis / Celery ---
+redis==5.2.1
+celery[redis]==5.4.0
+
+# --- HTTP Client (async) ---
+httpx==0.28.1
+
+# --- LLM Providers ---
+anthropic==0.42.0
+openai>=1.58.0               # GPT-4o for Lock 2 Challenger agent
+
+# --- Math / Scoring ---
+numpy==2.2.1
+
+# --- YAML Config ---
+pyyaml==6.0.2
+
+# --- Logging ---
+structlog==24.4.0
+
+# --- Security ---
+cryptography==44.0.0
+
+# --- Scanner Libraries ---
+pytenable>=1.9.0             # UPGRADED: 1.5.2→1.9.0+ for Pydantic v2 + EPSS fields
+python-gvm>=24.8.0           # NEW: OpenVAS/Greenbone GMP protocol
+gvm-tools>=24.8.0            # NEW: GMP CLI tools
+defusedxml==0.7.1
+
+# --- Cloud Integration ---
+boto3>=1.35.0                # AWS asset inventory + STS
+# azure-identity>=1.19.0    # Uncomment for Azure support
+# azure-mgmt-compute>=33.0  # Uncomment for Azure VM inventory
+# google-cloud-asset>=3.27   # Uncomment for GCP support
+
+# --- Authentication ---
+PyJWT>=2.9.0                 # JWT token signing
+
+# --- Ticket Providers ---
+jira>=3.8.0
+
+# --- Testing ---
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+
+# --- Dev Tools ---
+black==24.10.0
+ruff==0.8.6
+mypy==1.14.1

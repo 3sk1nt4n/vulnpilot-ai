@@ -1,0 +1,53 @@
+# ============================================================
+# VulnPilot AI - SLA Tiers Configuration
+# Maps VPRS severity to remediation deadlines.
+# ============================================================
+
+sla_tiers:
+  critical:
+    hours: 24
+    priority: "P1"
+    auto_escalate_at_percent: 50
+    escalation_chain:
+      - "asset_owner"
+      - "team_lead"
+      - "ciso"
+
+  high:
+    hours: 72
+    priority: "P2"
+    auto_escalate_at_percent: 75
+    escalation_chain:
+      - "asset_owner"
+      - "team_lead"
+
+  medium:
+    hours: 336   # 14 days
+    priority: "P3"
+    auto_escalate_at_percent: 90
+    escalation_chain:
+      - "asset_owner"
+
+  low:
+    hours: 720   # 30 days
+    priority: "P4"
+    auto_escalate_at_percent: 100
+    escalation_chain:
+      - "asset_owner"
+
+  info:
+    hours: 0     # No SLA - track only
+    priority: "P5"
+    auto_escalate_at_percent: 0
+    escalation_chain: []
+
+# --- Nudge Settings ---
+nudge:
+  enabled: true
+  first_nudge_at_percent: 50      # Send first reminder at 50% SLA elapsed
+  second_nudge_at_percent: 75     # Second reminder at 75%
+  escalate_at_percent: 90         # Auto-escalate to next in chain at 90%
+  nudge_message_template: >
+    ⚠️ VulnPilot SLA Reminder: {cve_id} ({severity}) is at {percent}%
+    of its {sla_hours}h SLA. Assigned to: {assigned_to}.
+    VPRS Score: {vprs_score}. Please prioritize remediation.

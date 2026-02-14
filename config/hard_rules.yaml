@@ -1,0 +1,107 @@
+# ============================================================
+# VulnPilot AI - Hard Rules Engine (Lock 1)
+# YAML-based rules that AI CANNOT override.
+# These fire BEFORE AI scoring. Non-negotiable.
+# ============================================================
+
+rules:
+  # --- CISA KEV = Always Critical ---
+  - name: "kev_always_critical"
+    description: "Any CVE in the CISA KEV catalog is automatically CRITICAL"
+    condition:
+      field: "in_kev"
+      operator: "equals"
+      value: true
+    action:
+      override_severity: "critical"
+      minimum_vprs: 90
+      escalate: true
+      sla_hours: 24
+    priority: 1
+
+  # --- Active Ransomware = Always Critical ---
+  - name: "ransomware_critical"
+    description: "CVEs associated with active ransomware campaigns are CRITICAL"
+    condition:
+      field: "ransomware_associated"
+      operator: "equals"
+      value: true
+    action:
+      override_severity: "critical"
+      minimum_vprs: 92
+      escalate: true
+      sla_hours: 24
+    priority: 2
+
+  # --- EPSS > 0.7 on Internet-Facing = Critical ---
+  - name: "high_epss_internet_facing"
+    description: "High EPSS on internet-facing assets = CRITICAL"
+    conditions:
+      - field: "epss_score"
+        operator: "greater_than"
+        value: 0.7
+      - field: "is_internet_facing"
+        operator: "equals"
+        value: true
+    logic: "and"
+    action:
+      override_severity: "critical"
+      minimum_vprs: 88
+      escalate: true
+      sla_hours: 48
+    priority: 3
+
+  # --- Exploit For Sale on Dark Web = Critical ---
+  - name: "exploit_for_sale_critical"
+    description: "Exploits actively sold on dark web are CRITICAL"
+    condition:
+      field: "exploit_for_sale"
+      operator: "equals"
+      value: true
+    action:
+      override_severity: "critical"
+      minimum_vprs: 91
+      escalate: true
+      sla_hours: 24
+    priority: 4
+
+  # --- Tier 1 Asset + KEV = Immediate Escalation ---
+  - name: "crown_jewel_kev"
+    description: "KEV on crown jewel assets = immediate executive escalation"
+    conditions:
+      - field: "in_kev"
+        operator: "equals"
+        value: true
+      - field: "asset_tier"
+        operator: "equals"
+        value: "tier_1"
+    logic: "and"
+    action:
+      override_severity: "critical"
+      minimum_vprs: 95
+      escalate: true
+      escalate_to: "executive"
+      sla_hours: 12
+    priority: 5
+
+  # --- Zero EPSS + No KEV + No Dark Web + Internal = Floor at LOW ---
+  - name: "no_signals_floor"
+    description: "CVEs with zero threat signals are floored at LOW"
+    conditions:
+      - field: "epss_score"
+        operator: "less_than"
+        value: 0.01
+      - field: "in_kev"
+        operator: "equals"
+        value: false
+      - field: "dark_web_mentions"
+        operator: "equals"
+        value: 0
+      - field: "is_internet_facing"
+        operator: "equals"
+        value: false
+    logic: "and"
+    action:
+      maximum_severity: "low"
+      maximum_vprs: 20
+    priority: 10

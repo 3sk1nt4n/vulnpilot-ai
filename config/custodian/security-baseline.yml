@@ -1,0 +1,44 @@
+# VulnPilot AI - Custom Cloud Custodian Policies
+# Drop .yml files in this directory - VulnPilot discovers them automatically.
+# Docs: https://cloudcustodian.io/docs/
+policies:
+
+  - name: ec2-instance-no-imds-v2
+    resource: aws.ec2
+    description: "EC2 instances must enforce IMDSv2 (prevents SSRF credential theft)"
+    filters:
+      - type: value
+        key: MetadataOptions.HttpTokens
+        value: optional
+
+  - name: s3-no-encryption-at-rest
+    resource: aws.s3
+    description: "S3 buckets must have server-side encryption enabled"
+    filters:
+      - type: bucket-encryption
+        state: False
+
+  - name: ebs-volume-unencrypted
+    resource: aws.ebs
+    description: "EBS volumes must be encrypted at rest"
+    filters:
+      - Encrypted: false
+
+  - name: security-group-wide-open-egress
+    resource: aws.security-group
+    description: "Security groups should not allow unrestricted egress to all ports"
+    filters:
+      - type: egress
+        Ports: [0-65535]
+        Cidr: "0.0.0.0/0"
+
+  - name: iam-user-console-no-mfa
+    resource: aws.iam-user
+    description: "IAM users with console access must have MFA enabled"
+    filters:
+      - type: credential
+        key: password_enabled
+        value: true
+      - type: credential
+        key: mfa_active
+        value: false
