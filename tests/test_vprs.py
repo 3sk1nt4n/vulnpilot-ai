@@ -144,6 +144,38 @@ class TestLocalThreatIntel:
         assert r.in_kev is True
         assert r.ransomware_associated is True
 
+    @pytest.mark.asyncio
+    async def test_uses_bundled_fallback_when_files_missing(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = "./data/does-not-exist-epss.csv"
+        p.kev_json_path = "./data/does-not-exist-kev.json"
+
+        r = await p.enrich("CVE-2024-3400")
+        assert r.epss_score > 0.9
+        assert r.in_kev is True
+        assert "epss_fallback" in r.sources
+        assert "kev_fallback" in r.sources
+
+    @pytest.mark.asyncio
+    async def test_fallback_when_primary_files_are_invalid(self, tmp_path):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+
+        bad_epss = tmp_path / "bad_epss.csv"
+        bad_kev = tmp_path / "bad_kev.json"
+        bad_epss.write_text("cve,epss,percentile\nCVE-2024-3400,not-a-number,0.995\n")
+        bad_kev.write_text("{ invalid json }")
+
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = str(bad_epss)
+        p.kev_json_path = str(bad_kev)
+
+        r = await p.enrich("CVE-2024-3400")
+        assert r.epss_score > 0.9
+        assert r.in_kev is True
+        assert "epss_fallback" in r.sources
+        assert "kev_fallback" in r.sources
+
 
 class TestConsoleTickets:
     @pytest.mark.asyncio

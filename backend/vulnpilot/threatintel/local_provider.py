@@ -11,8 +11,7 @@ import csv
 import json
 import logging
 import os
-from datetime import datetime
-from typing import Optional
+from pathlib import Path
 
 from vulnpilot.threatintel.base import ThreatIntelProvider, ThreatIntelResult
 
@@ -32,54 +31,76 @@ class LocalThreatIntelProvider(ThreatIntelProvider):
         self._kev_cache: set[str] = set()
         self._kev_data: dict[str, dict] = {}
         self._loaded = False
+        self._fixtures_dir = Path(__file__).resolve().parent / "fixtures"
+        self._epss_source = "epss_csv"
+        self._kev_source = "kev_json"
+
+    def _load_epss_file(self, path: Path) -> bool:
+        try:
+            with path.open("r") as f:
+                reader = csv.DictReader(line for line in f if not line.startswith("#"))
+                for row in reader:
+                    cve = row.get("cve", "").strip()
+                    if cve:
+                        self._epss_cache[cve] = {
+                            "score": float(row.get("epss", 0)),
+                            "percentile": float(row.get("percentile", 0)) * 100,
+                        }
+            logger.info(f"Loaded {len(self._epss_cache)} EPSS scores from {path}")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to load EPSS CSV from {path}: {e}")
+            return False
+
+    def _load_kev_file(self, path: Path) -> bool:
+        try:
+            with path.open("r") as f:
+                data = json.load(f)
+                vulns = data.get("vulnerabilities", [])
+                for v in vulns:
+                    cve = v.get("cveID", "")
+                    self._kev_cache.add(cve)
+                    self._kev_data[cve] = {
+                        "date_added": v.get("dateAdded"),
+                        "due_date": v.get("dueDate"),
+                        "ransomware_use": v.get("knownRansomwareCampaignUse", "Unknown"),
+                        "vendor": v.get("vendorProject"),
+                        "product": v.get("product"),
+                    }
+            logger.info(f"Loaded {len(self._kev_cache)} KEV entries from {path}")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to load KEV JSON from {path}: {e}")
+            return False
 
     async def _ensure_loaded(self):
         """Lazy-load data files into memory."""
         if self._loaded:
             return
 
-        # Load EPSS scores
-        if os.path.exists(self.epss_csv_path):
-            try:
-                with open(self.epss_csv_path, "r") as f:
-                    # Skip comment lines (EPSS CSV has header comments)
-                    reader = csv.DictReader(
-                        line for line in f if not line.startswith("#")
-                    )
-                    for row in reader:
-                        cve = row.get("cve", "").strip()
-                        if cve:
-                            self._epss_cache[cve] = {
-                                "score": float(row.get("epss", 0)),
-                                "percentile": float(row.get("percentile", 0)) * 100,
-                            }
-                logger.info(f"Loaded {len(self._epss_cache)} EPSS scores from {self.epss_csv_path}")
-            except Exception as e:
-                logger.warning(f"Failed to load EPSS CSV: {e}")
-        else:
-            logger.warning(f"EPSS CSV not found at {self.epss_csv_path}")
+        # Load EPSS scores, falling back to bundled fixture data
+        epss_path = Path(self.epss_csv_path)
+        fallback_epss_path = self._fixtures_dir / "epss_fallback.csv"
+        epss_loaded = epss_path.exists() and self._load_epss_file(epss_path)
+        if not epss_loaded:
+            if not epss_path.exists():
+                logger.warning(f"EPSS CSV not found at {self.epss_csv_path}")
+            elif not self._epss_cache:
+                logger.warning(f"EPSS CSV at {self.epss_csv_path} could not be parsed, using fallback")
+            if self._load_epss_file(fallback_epss_path):
+                self._epss_source = "epss_fallback"
 
-        # Load CISA KEV catalog
-        if os.path.exists(self.kev_json_path):
-            try:
-                with open(self.kev_json_path, "r") as f:
-                    data = json.load(f)
-                    vulns = data.get("vulnerabilities", [])
-                    for v in vulns:
-                        cve = v.get("cveID", "")
-                        self._kev_cache.add(cve)
-                        self._kev_data[cve] = {
-                            "date_added": v.get("dateAdded"),
-                            "due_date": v.get("dueDate"),
-                            "ransomware_use": v.get("knownRansomwareCampaignUse", "Unknown"),
-                            "vendor": v.get("vendorProject"),
-                            "product": v.get("product"),
-                        }
-                logger.info(f"Loaded {len(self._kev_cache)} KEV entries from {self.kev_json_path}")
-            except Exception as e:
-                logger.warning(f"Failed to load KEV JSON: {e}")
-        else:
-            logger.warning(f"KEV JSON not found at {self.kev_json_path}")
+        # Load CISA KEV catalog, falling back to bundled fixture data
+        kev_path = Path(self.kev_json_path)
+        fallback_kev_path = self._fixtures_dir / "kev_fallback.json"
+        kev_loaded = kev_path.exists() and self._load_kev_file(kev_path)
+        if not kev_loaded:
+            if not kev_path.exists():
+                logger.warning(f"KEV JSON not found at {self.kev_json_path}")
+            elif not self._kev_cache:
+                logger.warning(f"KEV JSON at {self.kev_json_path} could not be parsed, using fallback")
+            if self._load_kev_file(fallback_kev_path):
+                self._kev_source = "kev_fallback"
 
         self._loaded = True
 
@@ -92,9 +113,9 @@ class LocalThreatIntelProvider(ThreatIntelProvider):
 
         sources = []
         if self._epss_cache:
-            sources.append("epss_csv")
+            sources.append(self._epss_source)
         if self._kev_cache:
-            sources.append("kev_json")
+            sources.append(self._kev_source)
 
         return ThreatIntelResult(
             cve_id=cve_id,
@@ -146,7 +167,12 @@ class LocalThreatIntelProvider(ThreatIntelProvider):
         return True
 
     async def health_check(self) -> bool:
-        return os.path.exists(self.epss_csv_path) or os.path.exists(self.kev_json_path)
+        return any([
+            os.path.exists(self.epss_csv_path),
+            os.path.exists(self.kev_json_path),
+            (self._fixtures_dir / "epss_fallback.csv").exists(),
+            (self._fixtures_dir / "kev_fallback.json").exists(),
+        ])
 
     @property
     def provider_name(self) -> str:

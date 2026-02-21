@@ -1,0 +1,4 @@
+# fallback EPSS sample entries bundled with VulnPilot
+cve,epss,percentile
+CVE-2024-21887,0.9723,0.998
+CVE-2024-3400,0.9511,0.995
