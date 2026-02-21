@@ -16,6 +16,14 @@ It replaces the broken CVSS-only workflow with VPRS (VulnPilot Priority Risk Sco
 
 **The result:** 85% noise elimination, 55% CVSS-vs-VPRS flips, and zero missed actively-exploited vulnerabilities.
 
+<img width="864" height="981" alt="2026-02-14_01-43-16" src="https://github.com/user-attachments/assets/0dfa9b0d-3283-41fb-81db-a8dceee81e85" />
+<img width="1168" height="979" alt="2026-02-14_00-32-39" src="https://github.com/user-attachments/assets/249b4c4e-3c10-4e74-9115-5482826d123c" />
+
+<img width="1439" height="949" alt="2026-02-14_01-48-36" src="https://github.com/user-attachments/assets/6f72c9a9-a395-42f1-b530-95758af24910" />
+
+<img width="445" height="492" alt="2026-02-14_00-05-13" src="https://github.com/user-attachments/assets/de812173-ebea-4f7d-81fc-7a7202b02a5a" />
+
+
 ## The Problem
 
 CVSS prioritization is wrong 96% of the time. Only 2% of CVEs are ever exploited, but CVSS flags 53% as high/critical. Security teams drown in false urgency while real threats slip through.
