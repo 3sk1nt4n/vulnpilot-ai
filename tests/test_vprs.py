@@ -177,6 +177,73 @@ class TestLocalThreatIntel:
         assert "kev_fallback" in r.sources
 
 
+class TestNormalizedVulnToDict:
+    def test_to_dict(self):
+        vuln = make_vuln(title="Test Vuln", description="desc", solution="sol")
+        d = vuln.to_dict()
+        assert d["cve_id"] == "CVE-2024-99999"
+        assert d["asset_tier"] == "tier_3"
+        assert "hostname" in d
+
+
+class TestThreatIntelResultToDict:
+    def test_to_dict(self):
+        intel = make_intel(epss_score=0.85, in_kev=True)
+        d = intel.to_dict()
+        assert d["cve_id"] == "CVE-2024-99999"
+        assert d["epss_score"] == 0.85
+        assert d["in_kev"] is True
+
+
+class TestLocalThreatIntelExtended:
+    @pytest.mark.asyncio
+    async def test_get_dark_web_intel(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = "./data/epss_scores.csv"
+        p.kev_json_path = "./data/known_exploited_vulns.json"
+        result = await p.get_dark_web_intel("CVE-2024-21887")
+        assert result["exploit_available"] is True
+        assert result["dark_web_mentions"] == 0
+        assert "note" in result
+
+    @pytest.mark.asyncio
+    async def test_get_dark_web_intel_unknown_cve(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = "./data/epss_scores.csv"
+        p.kev_json_path = "./data/known_exploited_vulns.json"
+        result = await p.get_dark_web_intel("CVE-9999-99999")
+        assert result["exploit_available"] is False
+
+    @pytest.mark.asyncio
+    async def test_refresh_cache(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = "./data/epss_scores.csv"
+        p.kev_json_path = "./data/known_exploited_vulns.json"
+        # Load initially
+        await p.enrich("CVE-2024-21887")
+        assert p._loaded is True
+        # Refresh
+        result = await p.refresh_cache()
+        assert result is True
+        assert p._loaded is True
+
+    @pytest.mark.asyncio
+    async def test_health_check(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        p.epss_csv_path = "./data/epss_scores.csv"
+        p.kev_json_path = "./data/known_exploited_vulns.json"
+        assert await p.health_check() is True
+
+    def test_provider_name(self):
+        from vulnpilot.threatintel.local_provider import LocalThreatIntelProvider
+        p = LocalThreatIntelProvider()
+        assert p.provider_name == "local"
+
+
 class TestConsoleTickets:
     @pytest.mark.asyncio
     async def test_create_ticket(self):

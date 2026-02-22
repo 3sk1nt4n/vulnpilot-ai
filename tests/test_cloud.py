@@ -120,6 +120,107 @@ class TestOCSFParser:
         result = parser._parse_record(record)
         assert result is None
 
+    def test_to_dict(self):
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        finding = parser._parse_record(self._sample_record())
+        d = finding.to_dict()
+        assert d["check_id"] == "prowler-aws-iam_root_mfa"
+        assert d["severity"] == "critical"
+        assert "frameworks" in d
+
+    def test_parse_file_skips_empty_lines(self):
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ocsf.json", delete=False) as f:
+            f.write(json.dumps(self._sample_record()) + "\n")
+            f.write("\n")  # empty line
+            f.write("   \n")  # whitespace-only line
+            f.write(json.dumps(self._sample_record()) + "\n")
+            f.flush()
+            findings = parser.parse_file(f.name)
+        os.unlink(f.name)
+        assert len(findings) == 2
+
+    def test_parse_file_handles_json_decode_error(self):
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ocsf.json", delete=False) as f:
+            f.write(json.dumps(self._sample_record()) + "\n")
+            f.write("{invalid json}\n")  # malformed JSON
+            f.write(json.dumps(self._sample_record()) + "\n")
+            f.flush()
+            findings = parser.parse_file(f.name)
+        os.unlink(f.name)
+        assert len(findings) == 2  # skips bad line, keeps good ones
+
+    def test_parse_file_handles_normalize_error(self):
+        """Valid JSON that crashes during _parse_record (lines 126-127)."""
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ocsf.json", delete=False) as f:
+            f.write(json.dumps(self._sample_record()) + "\n")
+            # Valid JSON but resources is a string, so resources[0].get() will
+            # raise AttributeError during normalization
+            bad_record = self._sample_record()
+            bad_record["resources"] = "not-a-list"
+            f.write(json.dumps(bad_record) + "\n")
+            f.flush()
+            findings = parser.parse_file(f.name)
+        os.unlink(f.name)
+        assert len(findings) == 1  # good record kept, bad one skipped
+
+    def test_parse_file_read_error(self):
+        """Outer exception handler for file read errors (lines 130-131)."""
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".ocsf.json", delete=False) as f:
+            # Write invalid UTF-8 bytes to trigger a read error
+            f.write(b'\x80\x81\x82\n')
+            f.flush()
+            findings = parser.parse_file(f.name)
+        os.unlink(f.name)
+        # Should return empty list or partial results without crashing
+        assert isinstance(findings, list)
+
+    def test_string_requirements_in_compliance(self):
+        """String-type compliance requirements (lines 170-172)."""
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        record = self._sample_record()
+        record["compliance"] = {
+            "requirements": ["CIS 1.5 - 1.4", "SOC2 CC6.1"]
+        }
+        finding = parser._parse_record(record)
+        assert "CIS 1.5 - 1.4" in finding.frameworks
+        assert "SOC2 CC6.1" in finding.requirements
+
+    def test_azure_cloud_detection(self):
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        record = self._sample_record()
+        record["metadata"] = {"product": {"name": "Prowler", "vendor_name": "Azure Prowler"}}
+        finding = parser._parse_record(record)
+        assert finding.cloud_provider == "azure"
+
+    def test_gcp_cloud_detection(self):
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        record = self._sample_record()
+        record["metadata"] = {"product": {"name": "Prowler", "vendor_name": "Google Cloud"}}
+        finding = parser._parse_record(record)
+        assert finding.cloud_provider == "gcp"
+
+    def test_invalid_timestamp(self):
+        """Invalid timestamp should be handled gracefully (lines 206-207)."""
+        from vulnpilot.cloud.ocsf_parser import OCSFParser
+        parser = OCSFParser()
+        record = self._sample_record()
+        record["time_dt"] = "not-a-valid-timestamp"
+        finding = parser._parse_record(record)
+        assert finding is not None
+        assert finding.scan_timestamp is None
+
     def test_parse_sample_data(self):
         """Test parsing the actual sample OCSF data file."""
         from vulnpilot.cloud.ocsf_parser import OCSFParser
