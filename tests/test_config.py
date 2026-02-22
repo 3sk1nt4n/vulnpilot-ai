@@ -23,8 +23,15 @@ try:
 except ImportError:
     HAS_SQLALCHEMY = False
 
+try:
+    import httpx  # noqa: F401
+    HAS_HTTPX = True
+except ImportError:
+    HAS_HTTPX = False
+
 skip_no_pydantic = pytest.mark.skipif(not HAS_PYDANTIC_SETTINGS, reason="pydantic_settings not installed")
 skip_no_sqlalchemy = pytest.mark.skipif(not HAS_SQLALCHEMY, reason="sqlalchemy not installed")
+skip_no_httpx = pytest.mark.skipif(not HAS_HTTPX, reason="httpx not installed (required for LLM providers)")
 
 
 # ═══════════════════════════════════════
@@ -386,6 +393,206 @@ class TestScannerFactory:
 # ═══════════════════════════════════════
 # tickets/base.py - Dataclasses
 # ═══════════════════════════════════════
+
+@skip_no_httpx
+class TestLLMFactory:
+    def setup_method(self):
+        from vulnpilot.llm import factory
+        factory._provider_cache.clear()
+
+    def test_get_all_provider_names(self):
+        from vulnpilot.llm.factory import get_all_provider_names
+        names = get_all_provider_names()
+        assert "ollama" in names
+        assert "anthropic" in names
+        assert "openai" in names
+
+    def test_create_provider_ollama(self):
+        from vulnpilot.llm.factory import _create_provider
+        p = _create_provider("ollama")
+        assert p.provider_name == "ollama"
+
+    def test_create_provider_unknown_raises(self):
+        from vulnpilot.llm.factory import _create_provider
+        with pytest.raises(ValueError, match="Unknown LLM provider"):
+            _create_provider("gemini")
+
+    def test_get_llm_provider_default(self):
+        from vulnpilot.llm.factory import get_llm_provider
+        with patch.dict(os.environ, {"LLM_PROVIDER": "ollama"}):
+            p = get_llm_provider()
+            assert p.provider_name == "ollama"
+
+    def test_get_provider_by_name_caching(self):
+        from vulnpilot.llm.factory import get_provider_by_name
+        p1 = get_provider_by_name("ollama")
+        p2 = get_provider_by_name("ollama")
+        assert p1 is p2
+
+    def test_get_provider_by_name_alias_claude(self):
+        from vulnpilot.llm.factory import get_provider_by_name
+        p = get_provider_by_name("claude")
+        assert p.provider_name == "anthropic"
+
+    def test_get_provider_by_name_none_uses_env(self):
+        from vulnpilot.llm.factory import get_provider_by_name
+        with patch.dict(os.environ, {"LLM_PROVIDER": "ollama"}):
+            p = get_provider_by_name(None)
+            assert p.provider_name == "ollama"
+
+    def test_get_challenger_provider_empty(self):
+        from vulnpilot.llm.factory import get_challenger_provider
+        with patch.dict(os.environ, {"CHALLENGER_PROVIDER": ""}):
+            assert get_challenger_provider() is None
+
+    def test_get_challenger_provider_set(self):
+        from vulnpilot.llm.factory import get_challenger_provider
+        with patch.dict(os.environ, {"CHALLENGER_PROVIDER": "ollama"}):
+            p = get_challenger_provider()
+            assert p.provider_name == "ollama"
+
+    @pytest.mark.asyncio
+    async def test_get_provider_health(self):
+        from vulnpilot.llm.factory import get_provider_health
+        with patch.dict(os.environ, {"LLM_PROVIDER": "ollama"}, clear=True):
+            results = await get_provider_health()
+            assert "ollama" in results
+            assert "anthropic" in results
+            assert "openai" in results
+            assert results["anthropic"]["reason"] == "no_key"
+            assert results["openai"]["reason"] == "no_key"
+
+
+class TestCMDBProvider:
+    @pytest.mark.asyncio
+    async def test_csv_provider_not_found(self):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        p = CSVCMDBProvider()
+        p.file_path = "/nonexistent/cmdb.csv"
+        result = await p.lookup_by_ip("10.0.0.1")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_csv_provider_load_csv(self, tmp_path):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        csv_file = tmp_path / "cmdb.csv"
+        csv_file.write_text(
+            "hostname,ip_address,asset_tier,business_unit,owner,owner_email,"
+            "is_internet_facing,network_zone,has_waf,has_ips,is_segmented,environment\n"
+            "web-01,10.0.0.1,tier_1,payments,security-team,sec@co.com,"
+            "true,dmz,true,true,false,production\n"
+            "db-01,10.0.0.2,tier_2,backend,db-team,db@co.com,"
+            "false,internal,false,false,true,production\n"
+        )
+        p = CSVCMDBProvider()
+        p.file_path = str(csv_file)
+        result = await p.lookup_by_ip("10.0.0.1")
+        assert result is not None
+        assert result.hostname == "web-01"
+        assert result.asset_tier == "tier_1"
+        assert result.is_internet_facing is True
+        assert result.has_waf is True
+
+    @pytest.mark.asyncio
+    async def test_csv_provider_load_json(self, tmp_path):
+        import json
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        json_file = tmp_path / "cmdb.json"
+        json_file.write_text(json.dumps([
+            {"hostname": "api-01", "ip_address": "10.0.1.1", "asset_tier": "tier_1",
+             "is_internet_facing": True, "has_waf": True, "owner": "api-team"},
+        ]))
+        p = CSVCMDBProvider()
+        p.file_path = str(json_file)
+        result = await p.lookup_by_hostname("api-01")
+        assert result is not None
+        assert result.asset_tier == "tier_1"
+        assert result.is_internet_facing is True
+
+    @pytest.mark.asyncio
+    async def test_csv_provider_json_dict_format(self, tmp_path):
+        import json
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        json_file = tmp_path / "cmdb.json"
+        json_file.write_text(json.dumps({"assets": [
+            {"hostname": "srv-01", "ip_address": "10.0.2.1"},
+        ]}))
+        p = CSVCMDBProvider()
+        p.file_path = str(json_file)
+        result = await p.lookup_by_ip("10.0.2.1")
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_csv_provider_get_all(self, tmp_path):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        csv_file = tmp_path / "cmdb.csv"
+        csv_file.write_text(
+            "hostname,ip_address,asset_tier\n"
+            "web-01,10.0.0.1,tier_1\n"
+            "db-01,10.0.0.2,tier_2\n"
+        )
+        p = CSVCMDBProvider()
+        p.file_path = str(csv_file)
+        assets = await p.get_all_assets()
+        assert len(assets) == 2
+
+    @pytest.mark.asyncio
+    async def test_csv_provider_health_check(self, tmp_path):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        csv_file = tmp_path / "cmdb.csv"
+        csv_file.write_text("hostname,ip_address\n")
+        p = CSVCMDBProvider()
+        p.file_path = str(csv_file)
+        assert await p.health_check() is True
+        p.file_path = "/nonexistent"
+        assert await p.health_check() is False
+
+    def test_csv_provider_name(self):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        assert CSVCMDBProvider().provider_name == "csv"
+
+    @pytest.mark.asyncio
+    async def test_enrich_vuln_by_hostname(self, tmp_path):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        csv_file = tmp_path / "cmdb.csv"
+        csv_file.write_text("hostname,ip_address,asset_tier\nweb-01,10.0.0.1,tier_1\n")
+        p = CSVCMDBProvider()
+        p.file_path = str(csv_file)
+        result = await p.enrich_vuln("web-01", "")
+        assert result is not None
+        assert result.asset_tier == "tier_1"
+
+    @pytest.mark.asyncio
+    async def test_enrich_vuln_by_ip(self, tmp_path):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        csv_file = tmp_path / "cmdb.csv"
+        csv_file.write_text("hostname,ip_address,asset_tier\nweb-01,10.0.0.1,tier_1\n")
+        p = CSVCMDBProvider()
+        p.file_path = str(csv_file)
+        result = await p.enrich_vuln("", "10.0.0.1")
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_enrich_vuln_no_match(self):
+        from vulnpilot.cmdb.provider import CSVCMDBProvider
+        p = CSVCMDBProvider()
+        p.file_path = "/nonexistent"
+        result = await p.enrich_vuln("", "")
+        assert result is None
+
+    def test_asset_record_defaults(self):
+        from vulnpilot.cmdb.provider import AssetRecord
+        r = AssetRecord()
+        assert r.hostname == ""
+        assert r.asset_tier == "tier_3"
+        assert r.is_internet_facing is False
+        assert r.tags == []
+
+    def test_servicenow_provider_name(self):
+        from vulnpilot.cmdb.provider import ServiceNowCMDBProvider
+        p = ServiceNowCMDBProvider()
+        assert p.provider_name == "servicenow_cmdb"
+
 
 class TestTicketBase:
     def test_sla_status_enum(self):
