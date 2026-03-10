@@ -529,4 +529,3 @@ Proprietary. Copyright 2025 Solvent CyberSecurity LLC. All rights reserved.
 
 - **Company:** [Solvent CyberSecurity](https://solventcyber.com)
 - **Author:** Adil Eskintan
-- **Email:** info@solventcyber.com
